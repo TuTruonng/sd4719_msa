@@ -1,0 +1,44 @@
+trigger:
+- main
+
+variables:
+  azureServiceConnection: 'AzureRM-Connection'
+  acrServiceConnection: 'ACR-ServiceConnection'
+  aksResourceGroup: 'my-aks-rg'
+  aksClusterName: 'my-aks-cluster'
+  imageName: 'myapp'
+  dockerfilePath: 'src/backend/Dockerfile'
+  imageTag: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildImage
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      inputs:
+        command: 'buildAndPush'
+        repository: '$(imageName)'
+        dockerfile: '$(dockerfilePath)'
+        containerRegistry: '$(acrServiceConnection)'
+        tags: |
+          latest
+          $(imageTag)
+
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - job: DeployToAKS
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName)
+          kubectl apply -f kubernetes/
