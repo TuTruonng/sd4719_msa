@@ -7,9 +7,9 @@ pool:
   vmImage: 'ubuntu-latest'   # use Microsoft-hosted agent
 
 variables:
-  # dockerRegistryServiceConnection: 'AzureRM-Connection'
-  # kubernetesServiceConnection: 'AzureKubernetesServiceSC'
-  # containerRegistry: 'bndzacr.azurecr.io'
+  dockerRegistryServiceConnection: 'AzureRM-Connection'
+  kubernetesServiceConnection: 'AKS-ServiceConnection'
+  containerRegistry: 'mydemoacrregistry'
   azureServiceConnection: 'AzureRM-Connection'
   acrServiceConnection: 'ACR-ServiceConnection'
   aksResourceGroup: 'demo-rg'
