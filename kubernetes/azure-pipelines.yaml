@@ -13,7 +13,7 @@ variables:
   azureServiceConnection: 'AzureRM-Connection'
   acrServiceConnection: 'ACR-ServiceConnection'
   aksResourceGroup: 'demo-rg'
-  aksClusterName: 'demo-aks-cluster
+  aksClusterName: 'demo-aks-cluster'
   frontendImageName: 'frontend'
   backendImageName: 'backend'
   imageTag: '$(Build.BuildId)'
