@@ -74,22 +74,19 @@ stages:
   - job: DeployToAKS
     displayName: Deploy to AKS Cluster
     steps:
-    - task: AzureCLI@2
-      displayName: Apply Kubernetes Manifests
-      inputs:
-        azureSubscription: '$(azureServiceConnection)'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          echo "Connecting to AKS..."
-          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
-
-          echo "Applying manifests..."
-          kubectl apply -n $(k8sNamespace) -f kubernetes/
-
-          echo "Checking rollout status..."
-          kubectl rollout status deployment/frontend-deployment -n default
-          kubectl rollout status deployment/backend-deployment -n default
+    - task: Kubernetes@1
+        displayName: Apply Kubernetes Manifests
+        inputs:
+          connectionType: 'Kubernetes Service Connection'
+          kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+          namespace: $(namespace)
+          command: apply
+          useConfigurationFile: true
+          configuration: |
+            azure-manifest-files/mongodb.yaml
+            azure-manifest-files/backend.yaml
+            azure-manifest-files/frontend.yaml
+            azure-manifest-files/ingress.yaml
 
 # - stage: Deploy
 #   displayName: Deploy to AKS
