@@ -73,8 +73,6 @@ stages:
   jobs:
   - job: DeployToAKS
     displayName: Deploy to AKS Cluster
-    pool:
-      name: 'Default'
     steps:
     - task: AzureCLI@2
       displayName: Apply Kubernetes Manifests
