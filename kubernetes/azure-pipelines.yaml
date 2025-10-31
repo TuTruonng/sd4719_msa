@@ -85,10 +85,10 @@ stages:
         command: apply
         useConfigurationFile: true
         configuration: |
-          azure-manifest-files/backend.yaml
-          azure-manifest-files/frontend.yaml
-          azure-manifest-files/ingress.yaml
-          azure-manifest-files/mongodb.yaml
+          $(System.DefaultWorkingDirectory)/azure-manifest-files/backend.yaml
+          $(System.DefaultWorkingDirectory)/azure-manifest-files/frontend.yaml
+          $(System.DefaultWorkingDirectory)/azure-manifest-files/ingress.yaml
+          $(System.DefaultWorkingDirectory)/azure-manifest-files/mongodb.yaml
 
 # - stage: Deploy
 #   displayName: Deploy to AKS
