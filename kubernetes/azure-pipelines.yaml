@@ -37,10 +37,10 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         repository: $(frontendImageName)
         command: buildAndPush
-        Dockerfile: kubernetes/src/frontend/Dockerfile
+        Dockerfile: $(Build.SourcesDirectory)/kubernetes/src/frontend/Dockerfile
         tags: |
           $(imageTag)
-        buildContext: src/frontend
+        buildContext: $(Build.SourcesDirectory)/kubernetes/src/frontend
 
     # Build and Push Backend Docker Image
     - task: Docker@2
@@ -49,10 +49,10 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         repository: $(backendImageName)
         command: buildAndPush
-        Dockerfile: kubernetes/src/backend/Dockerfile
+        Dockerfile: $(Build.SourcesDirectory)/kubernetes/src/backend/Dockerfile
         tags: |
           $(imageTag)
-        buildContext: src/backend
+        buildContext: $(Build.SourcesDirectory)/kubernetes/src/backend
 
     # Update manifest files with new image tags
     - task: Bash@3
