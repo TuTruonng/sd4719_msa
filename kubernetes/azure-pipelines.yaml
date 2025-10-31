@@ -65,10 +65,6 @@ stages:
           sed -i "s|image:.*frontend.*|image: $(frontendImageUri)|g" Manifest-Azure/frontend.yaml
           echo "Updated manifests successfully."
 
-    # Publish all manifests as build artifacts
-    - publish: Manifest-Azure
-      artifact: manifests
-
 - stage: Deploy
   displayName: Deploy to AKS
   dependsOn: BuildAndPush
