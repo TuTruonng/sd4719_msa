@@ -1,6 +1,7 @@
 trigger:
   branches:
     include:
+      - master
       - main
 
 pool:
@@ -69,6 +70,7 @@ stages:
 - stage: Deploy
   displayName: Deploy to AKS
   dependsOn: BuildAndPush
+  condition: succeeded()
   jobs:
   - job: DeployToAKS
     displayName: Deploy to AKS Cluster
