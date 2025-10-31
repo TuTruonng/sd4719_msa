@@ -10,7 +10,7 @@ pool:
 variables:
   dockerRegistryServiceConnection: 'ACR-ServiceConnection'
   kubernetesServiceConnection: 'AKS-ServiceConnection'
-  containerRegistry: 'mydemoacrregistry'
+  containerRegistry: 'mydemoacrregistry.azurecr.io'
   azureServiceConnection: 'AzureRM-Connection'
   acrServiceConnection: 'ACR-ServiceConnection'
   aksResourceGroup: 'demo-rg'
