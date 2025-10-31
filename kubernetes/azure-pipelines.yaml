@@ -37,7 +37,7 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         repository: $(frontendImageName)
         command: buildAndPush
-        Dockerfile: src/frontend/Dockerfile
+        Dockerfile: $(Build.SourcesDirectory)/src/frontend/Dockerfile
         tags: |
           $(imageTag)
         buildContext: src/frontend
@@ -49,7 +49,7 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         repository: $(backendImageName)
         command: buildAndPush
-        Dockerfile: src/backend/Dockerfile
+        Dockerfile: $(Build.SourcesDirectory)/src/backend/Dockerfile
         tags: |
           $(imageTag)
         buildContext: src/backend
