@@ -1,0 +1,85 @@
+grafana:
+  adminUser: admin
+  adminPassword: admin123
+  service:
+    type: ClusterIP # Internal-only access
+    port: 80
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClassName: managed-csi
+  dashboards:
+    default:
+      kubernetes-cluster:
+        gnetId: 6417
+        revision: 1
+        datasource: Prometheus
+      pods-overview:
+        gnetId: 15760
+        revision: 3
+        datasource: Prometheus
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 250m
+
+prometheus:
+  service:
+    type: ClusterIP
+  prometheusSpec:
+    retention: 3d
+    replicas: 1
+    serviceMonitorSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: managed-csi
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 200m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+
+alertmanager:
+  enabled: false # disabled for dev
+
+kube-state-metrics:
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+    limits:
+      memory: 128Mi
+      cpu: 100m
+
+nodeExporter:
+  resources:
+    requests:
+      memory: 32Mi
+      cpu: 25m
+    limits:
+      memory: 64Mi
+      cpu: 50m
+
+# Enable minimal scraping
+defaultRules:
+  create: true
+  rules:
+    alertmanager: false
+    etcd: false
+    general: true
+    k8s: true
+    kubeApiserver: true
+    kubePrometheusNodeAlerting: false
+    kubePrometheusNodeRecording: true
+    node: true
+    prometheus: true
