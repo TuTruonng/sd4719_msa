@@ -12,13 +12,11 @@ variables:
   kubernetesServiceConnection: 'AKS-ServiceConnection'
   containerRegistry: 'mydemoacrregistry.azurecr.io'
   azureServiceConnection: 'AzureRM-Connection'
-  acrServiceConnection: 'ACR-ServiceConnection'
   aksResourceGroup: 'demo-rg'
   aksClusterName: 'demo-aks-cluster'
   frontendImageName: 'frontend'
   backendImageName: 'backend'
   imageTag: '$(Build.BuildId)'
-  namespace: 'default'
   k8sNamespace: 'default'
 
   backendImageUri: '$(containerRegistry)/$(backendImageName):$(imageTag)'
@@ -57,15 +55,15 @@ stages:
         buildContext: $(Build.SourcesDirectory)/kubernetes/src/backend
 
     # Update manifest files with new image tags
-    - task: Bash@3
-      displayName: Update Kubernetes manifests with new image tags
-      inputs:
-        targetType: 'inline'
-        script: |
-          echo "Updating image tags in Kubernetes manifests..."
-          sed -i "s|image:.*backend.*|image: $(backendImageUri)|g" Manifest-Azure/backend.yaml
-          sed -i "s|image:.*frontend.*|image: $(frontendImageUri)|g" Manifest-Azure/frontend.yaml
-          echo "Updated manifests successfully."
+    #- task: Bash@3
+    # displayName: Update Kubernetes manifests with new image tags
+    # inputs:
+    #   targetType: 'inline'
+    #   script: |
+    #     echo "Updating image tags in Kubernetes manifests..."
+    #     sed -i "s|image:.*backend.*|image: $(backendImageUri)|g" azure-manifest-files/backend.yaml
+    #     sed -i "s|image:.*frontend.*|image: $(frontendImageUri)|g" azure-manifest-files/frontend.yaml
+    #     echo "Updated manifests successfully."
 
 - stage: Deploy
   displayName: Deploy to AKS
@@ -77,59 +75,31 @@ stages:
     - checkout: self
 
     - task: Kubernetes@1
-      displayName: Apply Kubernetes Manifests
+      displayName: Deploy MongoDB
       inputs:
         connectionType: 'Kubernetes Service Connection'
         kubernetesServiceEndpoint: $(kubernetesServiceConnection)
         namespace: $(k8sNamespace)
         command: apply
         useConfigurationFile: true
-        configuration:
-          $(System.DefaultWorkingDirectory)/azure-manifest-files/backend.yaml
-          $(System.DefaultWorkingDirectory)/azure-manifest-files/frontend.yaml
-          $(System.DefaultWorkingDirectory)/azure-manifest-files/ingress.yaml
-          $(System.DefaultWorkingDirectory)/azure-manifest-files/mongodb.yaml
+        configuration: azure-manifest-files/mongodb.yaml
 
-# - stage: Deploy
-#   displayName: Deploy to AKS
-#   dependsOn: BuildAndPush
-#   jobs:
-#   - deployment: DeployToAKS
-#     displayName: Deploy Kubernetes Manifests to AKS
-#     environment: 'production'
-#     strategy:
-#       runOnce:
-#         deploy:
-#           steps:
-#           - download: current
-#             artifact: manifests
+    - task: Kubernetes@1
+      displayName: Deploy Backend
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+        namespace: $(k8sNamespace)
+        command: apply
+        useConfigurationFile: true
+        configuration: azure-manifest-files/backend.yaml
 
-#           - task: Kubernetes@1
-#             displayName: Deploy MongoDB
-#             inputs:
-#               connectionType: 'Kubernetes Service Connection'
-#               kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-#               namespace: $(namespace)
-#               command: apply
-#               useConfigurationFile: true
-#               configuration: '$(Pipeline.Workspace)/manifests/mongodb.yaml'
-
-#           - task: Kubernetes@1
-#             displayName: Deploy Backend
-#             inputs:
-#               connectionType: 'Kubernetes Service Connection'
-#               kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-#               namespace: $(namespace)
-#               command: apply
-#               useConfigurationFile: true
-#               configuration: '$(Pipeline.Workspace)/manifests/backend.yaml'
-
-#           - task: Kubernetes@1
-#             displayName: Deploy Frontend
-#             inputs:
-#               connectionType: 'Kubernetes Service Connection'
-#               kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-#               namespace: $(namespace)
-#               command: apply
-#               useConfigurationFile: true
-#               configuration: '$(Pipeline.Workspace)/manifests/frontend.yaml'
+    - task: Kubernetes@1
+      displayName: Deploy Frontend
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+        namespace: $(k8sNamespace)
+        command: apply
+        useConfigurationFile: true
+        configuration: azure-manifest-files/frontend.yaml
