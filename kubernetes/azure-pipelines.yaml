@@ -61,11 +61,11 @@ stages:
         targetType: 'inline'
         script: |
           echo "Updating image tags in Kubernetes manifests..."
-          sed -i "s|image: .*backend.*|image: $(backendImageUri)|g" azure-manifest-files/backend.yaml
-          sed -i "s|image: .*frontend.*|image: $(frontendImageUri)|g" azure-manifest-files/frontend.yaml
+          sed -i "s|image: .*backend.*|image: $(backendImageUri)|g" $(Build.SourcesDirectory)/kubernetes/azure-manifest-files/backend.yaml
+          sed -i "s|image: .*frontend.*|image: $(frontendImageUri)|g" $(Build.SourcesDirectory)/kubernetes/azure-manifest-files/frontend.yaml
           echo "Updated manifests successfully."
 
-    - publish: azure-manifest-files
+    - publish: $(Build.SourcesDirectory)/kubernetes/azure-manifest-files
       artifact: manifests 
 
 - stage: Deploy
