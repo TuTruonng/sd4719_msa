@@ -55,15 +55,18 @@ stages:
         buildContext: $(Build.SourcesDirectory)/kubernetes/src/backend
 
     # Update manifest files with new image tags
-    #- task: Bash@3
-    # displayName: Update Kubernetes manifests with new image tags
-    # inputs:
-    #   targetType: 'inline'
-    #   script: |
-    #     echo "Updating image tags in Kubernetes manifests..."
-    #     sed -i "s|image:.*backend.*|image: $(backendImageUri)|g" azure-manifest-files/backend.yaml
-    #     sed -i "s|image:.*frontend.*|image: $(frontendImageUri)|g" azure-manifest-files/frontend.yaml
-    #     echo "Updated manifests successfully."
+    - task: Bash@3
+      displayName: Update Kubernetes manifests with new image tags
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Updating image tags in Kubernetes manifests..."
+          sed -i "s|image: .*backend.*|image: $(backendImageUri)|g" azure-manifest-files/backend.yaml
+          sed -i "s|image: .*frontend.*|image: $(frontendImageUri)|g" azure-manifest-files/frontend.yaml
+          echo "Updated manifests successfully."
+
+    - publish: azure-manifest-files
+      artifact: manifests 
 
 - stage: Deploy
   displayName: Deploy to AKS
@@ -72,7 +75,8 @@ stages:
   - job: DeployToAKS
     displayName: Deploy to AKS Cluster
     steps:
-    - checkout: self
+    - download: current
+      artifact: manifests
 
     - task: Kubernetes@1
       displayName: Deploy MongoDB
@@ -82,7 +86,7 @@ stages:
         namespace: $(k8sNamespace)
         command: apply
         useConfigurationFile: true
-        configuration: azure-manifest-files/mongodb.yaml
+        configuration: '$(Pipeline.Workspace)/manifests/mongodb.yaml'
 
     - task: Kubernetes@1
       displayName: Deploy Backend
@@ -92,7 +96,7 @@ stages:
         namespace: $(k8sNamespace)
         command: apply
         useConfigurationFile: true
-        configuration: azure-manifest-files/backend.yaml
+        configuration: '$(Pipeline.Workspace)/manifests/backend.yaml'
 
     - task: Kubernetes@1
       displayName: Deploy Frontend
@@ -102,4 +106,16 @@ stages:
         namespace: $(k8sNamespace)
         command: apply
         useConfigurationFile: true
-        configuration: azure-manifest-files/frontend.yaml
+        configuration: '$(Pipeline.Workspace)/manifests/frontend.yaml'
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: $(azureServiceConnection)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
+
+          kubectl rollout status deployment/backend -n $(k8sNamespace) --timeout=180s || true
+          kubectl rollout status deployment/frontend -n $(k8sNamespace) --timeout=180s || true
+          kubectl rollout restart statefulset mongo -n $(k8sNamespace) || true
