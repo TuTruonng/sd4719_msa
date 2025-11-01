@@ -71,7 +71,7 @@ spec:
     - metadata:
         name: data-volume
       spec:
-        storageClassName: mongo-sc
+        storageClassName: managed-csi
         accessModes:
           - "ReadWriteOnce"
         resources:
