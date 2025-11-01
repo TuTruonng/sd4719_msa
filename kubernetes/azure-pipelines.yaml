@@ -119,3 +119,16 @@ stages:
           kubectl rollout status deployment/backend -n $(k8sNamespace) --timeout=180s || true
           kubectl rollout status deployment/frontend -n $(k8sNamespace) --timeout=180s || true
           kubectl rollout restart statefulset mongo -n $(k8sNamespace) || true
+
+- stage: Cleanup
+  displayName: Cleanup Old ACR Images
+  jobs:
+    - job: ACRCleanup
+      steps:
+        - task: AzureCLI@2
+          inputs:
+            azureSubscription: 'AzureRM-Connection'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              bash acr-cleanup.sh
