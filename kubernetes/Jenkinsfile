@@ -1,0 +1,189 @@
+pipeline {
+  agent any
+
+  // static environment values (change region/cluster name as needed or pass as parameters)
+  environment {
+    AWS_REGION       = 'ap-southeast-1'
+    CLUSTER_NAME     = 'sd4719-eks-cluster'    // override via Jenkins job param or pipeline var
+    K8S_MANIFEST_DIR = 'kubernetes'            // where your manifests live in the repo
+    // credentials bound in a stage via withCredentials (not here) to avoid evaluating shell commands in env
+  }
+
+  options {
+    ansiColor('xterm')
+    skipDefaultCheckout false
+    timestamps()
+    buildDiscarder(logRotator(numToKeepStr: '30')) // keep last 30 builds
+  }
+
+  parameters {
+    string(name: 'IMAGE_TAG', defaultValue: '', description: 'Optional image tag. If empty, GIT_COMMIT or BUILD_NUMBER will be used.')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        script {
+          // resolve a stable image tag: prefer param -> git short SHA -> build number
+          env.GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+          if (params.IMAGE_TAG?.trim()) {
+            env.IMAGE_TAG = params.IMAGE_TAG
+          } else if (env.GIT_COMMIT_SHORT) {
+            env.IMAGE_TAG = env.GIT_COMMIT_SHORT
+          } else {
+            env.IMAGE_TAG = env.BUILD_NUMBER
+          }
+          echo "Using IMAGE_TAG=${env.IMAGE_TAG}"
+        }
+      }
+    }
+
+    stage('Prepare AWS / ECR Info') {
+      steps {
+        // Bind AWS creds only for the steps that need them
+        withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                                         usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                         passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh """
+            export AWS_REGION=${AWS_REGION}
+            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
+            ACCOUNT_ID=\$(aws sts get-caller-identity --query Account --output text --region ${AWS_REGION})
+            echo "AWS account: \${ACCOUNT_ID}"
+            echo "##teamcity[setParameter name='env.ACCOUNT_ID' value='\${ACCOUNT_ID}']" || true
+            echo "ACCOUNT_ID=\${ACCOUNT_ID}" > account.env
+          """
+        }
+        // load ACCOUNT_ID into env for subsequent stages
+        script {
+          def acct = readFile('account.env').trim().split('=')[-1]
+          env.ACCOUNT_ID = acct
+          env.ECR_REG = "${env.ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com"
+          env.FRONT_IMAGE = "${env.ECR_REG}/frontend:${env.IMAGE_TAG}"
+          env.BACK_IMAGE  = "${env.ECR_REG}/backend:${env.IMAGE_TAG}"
+          echo "FRONT_IMAGE=${env.FRONT_IMAGE}"
+          echo "BACK_IMAGE=${env.BACK_IMAGE}"
+        }
+      }
+    }
+
+    stage('ECR Login') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                                         usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                         passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh '''
+            set -euo pipefail
+            export AWS_REGION=${AWS_REGION}
+            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REG}
+            echo "Logged into ECR ${ECR_REG}"
+          '''
+        }
+      }
+    }
+
+    stage('Build & Push Images') {
+      parallel {
+        stage('Build & Push Frontend') {
+          steps {
+            dir('src/frontend') {
+              sh """
+                set -euo pipefail
+                docker build -t ${env.FRONT_IMAGE} .
+                docker push ${env.FRONT_IMAGE}
+              """
+            }
+          }
+        }
+        stage('Build & Push Backend') {
+          steps {
+            dir('src/backend') {
+              sh """
+                set -euo pipefail
+                docker build -t ${env.BACK_IMAGE} .
+                docker push ${env.BACK_IMAGE}
+              """
+            }
+          }
+        }
+      }
+    }
+
+    stage('Prepare K8s Manifests') {
+      steps {
+        // Prefer kubectl rollout or ``kubectl set image`` instead of editing files then apply
+        // We'll create a temporary copy of manifests and replace images there, then archive
+        sh """
+          set -euo pipefail
+          mkdir -p k8s-temp
+          cp ${K8S_MANIFEST_DIR}/*.yaml k8s-temp/ || true
+          # Use yq or sed depending on availability; sed examples below:
+          sed -i "s|image:.*frontend.*|image: ${env.FRONT_IMAGE}|g" k8s-temp/frontend.yaml || true
+          sed -i "s|image:.*backend.*|image: ${env.BACK_IMAGE}|g"  k8s-temp/backend.yaml || true
+          # keep the originals for traceability and archive the updated ones
+          ls -la k8s-temp
+        """
+        archiveArtifacts artifacts: 'k8s-temp/*.yaml', fingerprint: true
+      }
+    }
+
+    stage('Deploy to EKS') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                                         usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                         passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh """
+            set -euo pipefail
+            export AWS_REGION=${AWS_REGION}
+            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            # update kubeconfig for CLUSTER_NAME (must exist and IAM creds must be allowed)
+            aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
+
+            # Option A: use kubectl apply on manifests (works for first deploy)
+            kubectl apply -f k8s-temp/mongodb.yaml || true
+            kubectl apply -f k8s-temp/backend.yaml
+            kubectl apply -f k8s-temp/frontend.yaml
+
+            # Option B (preferred for live update): update deployments image
+            # kubectl -n default set image deployment/backend backend=${BACK_IMAGE} --record || true
+            # kubectl -n default set image deployment/frontend frontend=${FRONT_IMAGE} --record || true
+
+            # wait for rollout to complete
+            kubectl rollout status deployment/backend --timeout=120s || true
+            kubectl rollout status deployment/frontend --timeout=120s || true
+          """
+        }
+      }
+    }
+
+    stage('Verify') {
+      steps {
+        sh '''
+          echo "Pods (default):"
+          kubectl get pods -o wide -n default || true
+          echo "Services:"
+          kubectl get svc -n default || true
+        '''
+      }
+    }
+  } // stages
+
+  post {
+    success {
+      echo "Deployment succeeded: frontend -> ${env.FRONT_IMAGE}, backend -> ${env.BACK_IMAGE}"
+    }
+    failure {
+      sh 'kubectl get pods --all-namespaces || true'
+      echo "Deployment failed. Check console output and logs."
+    }
+    cleanup {
+      // Optional cleanup: remove local images to save disk
+      sh 'docker image prune -af || true'
+    }
+  }
+}
