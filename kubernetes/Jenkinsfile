@@ -91,7 +91,7 @@ pipeline {
       parallel {
         stage('Build & Push Frontend') {
           steps {
-            dir('src/frontend') {
+            dir('kubernetes/src/frontend') {
               sh """
                 set -euo pipefail
                 docker build -t ${env.FRONT_IMAGE} .
@@ -102,7 +102,7 @@ pipeline {
         }
         stage('Build & Push Backend') {
           steps {
-            dir('src/backend') {
+            dir('kubernetes/src/backend') {
               sh """
                 set -euo pipefail
                 docker build -t ${env.BACK_IMAGE} .
