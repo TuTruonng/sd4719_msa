@@ -41,9 +41,10 @@ pipeline {
     stage('Prepare AWS / ECR Info') {
       steps {
         // Bind AWS creds only for the steps that need them
-        withCredentials([usernamePassword(credentialsId: 'aws-creds',
-                                         usernameVariable: 'AWS_ACCESS_KEY_ID',
-                                         passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          credentialsId: 'aws-creds'
+        ]]) {
           sh """
             export AWS_REGION=${AWS_REGION}
             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -70,9 +71,10 @@ pipeline {
 
     stage('ECR Login') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'aws-creds',
-                                         usernameVariable: 'AWS_ACCESS_KEY_ID',
-                                         passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          credentialsId: 'aws-creds'
+        ]]) {
           sh '''
             set -euo pipefail
             export AWS_REGION=${AWS_REGION}
@@ -132,9 +134,10 @@ pipeline {
 
     stage('Deploy to EKS') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'aws-creds',
-                                         usernameVariable: 'AWS_ACCESS_KEY_ID',
-                                         passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          credentialsId: 'aws-creds'
+        ]]) {
           sh """
             set -euo pipefail
             export AWS_REGION=${AWS_REGION}
