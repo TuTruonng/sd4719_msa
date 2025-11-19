@@ -94,7 +94,7 @@ pipeline {
     //   parallel {
         stage('Build & Push Frontend') {
           steps {
-            dir("${K8S_MANIFEST_DIR}/src/frontend") {
+            dir("${K8S_APP_DIR}/src/frontend") {
               sh """
                 set -euo pipefail
                 export NODE_OPTIONS="--max-old-space-size=${NODE_MAX_HEAP}"
@@ -107,7 +107,7 @@ pipeline {
         }
         stage('Build & Push Backend') {
           steps {
-            dir("${K8S_MANIFEST_DIR}/src/backend") {
+            dir("${K8S_APP_DIR}/src/backend") {
               sh """
                 set -euo pipefail
                 export NODE_OPTIONS="--max-old-space-size=${NODE_MAX_HEAP}"
@@ -128,10 +128,16 @@ pipeline {
         sh """
           set -euo pipefail
           mkdir -p ${TEMP_MANIFEST_DIR}
+
+          echo "Copying manifests from: ${K8S_MANIFEST_DIR}"
           cp ${K8S_MANIFEST_DIR}/*.yaml ${TEMP_MANIFEST_DIR}/ || true
 
-          # Use yq or sed depending on availability; sed examples below:
+          echo "Patching manifest images…"
+
+          # Update frontend image
           sed -i "s|image:.*frontend.*|image: ${env.FRONT_IMAGE}|g" ${TEMP_MANIFEST_DIR}/frontend.yaml || true
+
+          # Update backend image
           sed -i "s|image:.*backend.*|image: ${env.BACK_IMAGE}|g"  ${TEMP_MANIFEST_DIR}/backend.yaml || true
 
           # keep the originals for traceability and archive the updated ones
