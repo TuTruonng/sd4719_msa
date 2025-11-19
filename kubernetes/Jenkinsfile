@@ -6,7 +6,9 @@ pipeline {
     AWS_REGION       = 'ap-southeast-1'
     CLUSTER_NAME     = 'sd4719-eks-cluster'    // override via Jenkins job param or pipeline var
     K8S_MANIFEST_DIR = 'kubernetes'            // where your manifests live in the repo
-    // credentials bound in a stage via withCredentials (not here) to avoid evaluating shell commands in env
+    K8S_NAMESPACE    = 'default'
+    NODE_MAX_HEAP    = '2048'                   // max heap for node builds
+    TEMP_MANIFEST_DIR = 'aws-manifest-files'
   }
 
   options {
@@ -87,13 +89,15 @@ pipeline {
       }
     }
 
-    stage('Build & Push Images') {
-      parallel {
+    // stage('Build & Push Images') {
+    //   parallel {
         stage('Build & Push Frontend') {
           steps {
-            dir('kubernetes/src/frontend') {
+            dir("${K8S_MANIFEST_DIR}/src/frontend") {
               sh """
                 set -euo pipefail
+                export NODE_OPTIONS="--max-old-space-size=${NODE_MAX_HEAP}"
+                export DOCKER_BUILDKIT=1
                 docker build -t ${env.FRONT_IMAGE} .
                 docker push ${env.FRONT_IMAGE}
               """
@@ -102,17 +106,19 @@ pipeline {
         }
         stage('Build & Push Backend') {
           steps {
-            dir('kubernetes/src/backend') {
+            dir("${K8S_MANIFEST_DIR}/src/backend") {
               sh """
                 set -euo pipefail
+                export NODE_OPTIONS="--max-old-space-size=${NODE_MAX_HEAP}"
+                export DOCKER_BUILDKIT=1
                 docker build -t ${env.BACK_IMAGE} .
                 docker push ${env.BACK_IMAGE}
               """
             }
           }
         }
-      }
-    }
+    //   }
+    // }
 
     stage('Prepare K8s Manifests') {
       steps {
@@ -120,15 +126,17 @@ pipeline {
         // We'll create a temporary copy of manifests and replace images there, then archive
         sh """
           set -euo pipefail
-          mkdir -p k8s-temp
-          cp ${K8S_MANIFEST_DIR}/*.yaml k8s-temp/ || true
+          mkdir -p ${TEMP_MANIFEST_DIR}
+          cp ${K8S_MANIFEST_DIR}/*.yaml ${TEMP_MANIFEST_DIR}/ || true
+
           # Use yq or sed depending on availability; sed examples below:
-          sed -i "s|image:.*frontend.*|image: ${env.FRONT_IMAGE}|g" k8s-temp/frontend.yaml || true
-          sed -i "s|image:.*backend.*|image: ${env.BACK_IMAGE}|g"  k8s-temp/backend.yaml || true
+          sed -i "s|image:.*frontend.*|image: ${env.FRONT_IMAGE}|g" ${TEMP_MANIFEST_DIR}/frontend.yaml || true
+          sed -i "s|image:.*backend.*|image: ${env.BACK_IMAGE}|g"  ${TEMP_MANIFEST_DIR}/backend.yaml || true
+
           # keep the originals for traceability and archive the updated ones
-          ls -la k8s-temp
+          ls -la ${TEMP_MANIFEST_DIR}
         """
-        archiveArtifacts artifacts: 'k8s-temp/*.yaml', fingerprint: true
+        archiveArtifacts artifacts: '${TEMP_MANIFEST_DIR}/*.yaml', fingerprint: true
       }
     }
 
@@ -143,13 +151,14 @@ pipeline {
             export AWS_REGION=${AWS_REGION}
             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
             # update kubeconfig for CLUSTER_NAME (must exist and IAM creds must be allowed)
             aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
 
             # Option A: use kubectl apply on manifests (works for first deploy)
-            kubectl apply -f k8s-temp/mongodb.yaml || true
-            kubectl apply -f k8s-temp/backend.yaml
-            kubectl apply -f k8s-temp/frontend.yaml
+            kubectl apply -f ${TEMP_MANIFEST_DIR}/mongodb.yaml || true
+            kubectl apply -f ${TEMP_MANIFEST_DIR}/backend.yaml
+            kubectl apply -f ${TEMP_MANIFEST_DIR}/frontend.yaml
 
             # Option B (preferred for live update): update deployments image
             # kubectl -n default set image deployment/backend backend=${BACK_IMAGE} --record || true
@@ -167,7 +176,7 @@ pipeline {
       steps {
         sh '''
           echo "Pods (default):"
-          kubectl get pods -o wide -n default || true
+          kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
           echo "Services:"
           kubectl get svc -n default || true
         '''
