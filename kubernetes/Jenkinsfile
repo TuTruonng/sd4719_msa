@@ -7,7 +7,7 @@ pipeline {
     CLUSTER_NAME     = 'sd4719-eks-cluster'    // override via Jenkins job param or pipeline var
     K8S_MANIFEST_DIR = 'kubernetes'            // where your manifests live in the repo
     K8S_NAMESPACE    = 'default'
-    NODE_MAX_HEAP    = '2048'                   // max heap for node builds
+    NODE_MAX_HEAP    = 4096                   // max heap for node builds
     TEMP_MANIFEST_DIR = 'aws-manifest-files'
   }
 
