@@ -1,5 +1,5 @@
 # Create image based on the official Node image from dockerhub
-FROM node:22-buster AS development
+FROM node:22-alpine AS development
 ENV DANGEROUSLY_DISABLE_HOST_CHECK=true
 # Create app directory
 WORKDIR /usr/src/app
