@@ -110,7 +110,7 @@ pipeline {
                       --repository-name frontend \
                         --region $AWS_REGION \
                         --query 'imageDetails | length(@)'
-                        --output text | grep -q '^[1-9]'; then
+                        --output text 2>/dev/null | grep -q '^[1-9]'; then
 
                     echo "Frontend image exists => SKIP build & push"
 
@@ -147,7 +147,7 @@ pipeline {
                       --repository-name backend \
                       --region $AWS_REGION \
                       --query 'imageDetails | length(@)'
-                      --output text | grep -q '^[1-9]'; then
+                      --output text 2>/dev/null | grep -q '^[1-9]'; then
 
                     echo "Backend image exists => SKIP build & push"
 
