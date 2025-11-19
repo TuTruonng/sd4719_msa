@@ -104,13 +104,14 @@ pipeline {
 
                 if aws ecr describe-images \
                     --repository-name frontend \
-                    --image-ids imageTag=$IMAGE_TAG \
-                    --region $AWS_REGION >/dev/null 2>&1; then
+                      --region $AWS_REGION \
+                      --query 'imageDetails | length(@)'
+                      --output text | grep -q '^[1-9]'; then
 
                   echo "Frontend image exists => SKIP build & push"
 
                 else
-                  echo "Image not found => BUILD + PUSH"
+                  echo "No images found in frontend repository => BUILD + PUSH"
 
                   echo "Cleaning old Docker images..."
                   docker image prune -f
@@ -135,13 +136,14 @@ pipeline {
 
                 if aws ecr describe-images \
                     --repository-name backend \
-                    --image-ids imageTag=$IMAGE_TAG \
-                    --region $AWS_REGION >/dev/null 2>&1; then
+                    --region $AWS_REGION \
+                    --query 'imageDetails | length(@)'
+                    --output text | grep -q '^[1-9]'; then
 
                   echo "Backend image exists => SKIP build & push"
 
                 else
-                  echo "Image not found => BUILD + PUSH"
+                  echo "No images found in backend repository => BUILD + PUSH"
 
                   echo "Cleaning old Docker images..."
                   docker image prune -f
