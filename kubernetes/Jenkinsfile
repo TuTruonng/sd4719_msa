@@ -90,74 +90,84 @@ pipeline {
       }
     }
 
-    stage('Build & Push Images') {
-      parallel {
+    // stage('Build & Push Images') {
+    //   parallel {
         stage('Build & Push Frontend') {
           steps {
             dir("${K8S_APP_DIR}/src/frontend") {
-              sh '''
-                set -euo pipefail
-                export NODE_OPTIONS="--max-old-space-size=$NODE_MAX_HEAP"
-                export DOCKER_BUILDKIT=0
+              withCredentials([[
+                $class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: 'aws-creds'
+              ]]) {
+                sh '''
+                  set -euo pipefail
+                  export NODE_OPTIONS="--max-old-space-size=$NODE_MAX_HEAP"
+                  export DOCKER_BUILDKIT=0
 
-                echo "Checking if FRONTEND image already exists in ECR..."
+                  echo "Checking if FRONTEND image already exists in ECR..."
 
-                if aws ecr describe-images \
-                    --repository-name frontend \
-                      --region $AWS_REGION \
-                      --query 'imageDetails | length(@)'
-                      --output text | grep -q '^[1-9]'; then
+                  if aws ecr describe-images \
+                      --repository-name frontend \
+                        --region $AWS_REGION \
+                        --query 'imageDetails | length(@)'
+                        --output text | grep -q '^[1-9]'; then
 
-                  echo "Frontend image exists => SKIP build & push"
+                    echo "Frontend image exists => SKIP build & push"
 
-                else
-                  echo "No images found in frontend repository => BUILD + PUSH"
+                  else
+                    echo "No images found in frontend repository => BUILD + PUSH"
 
-                  echo "Cleaning old Docker images..."
-                  docker image prune -f
-                  docker images | grep "<none>" || true | awk '{print $3}' | xargs -r docker rmi -f
+                    echo "Cleaning old Docker images..."
+                    docker image prune -f
+                    docker images | grep "<none>" || true | awk '{print $3}' | xargs -r docker rmi -f
 
-                  docker build -t $FRONT_IMAGE .
-                  docker push $FRONT_IMAGE
-                fi
-              '''
+                    docker build -t $FRONT_IMAGE .
+                    docker push $FRONT_IMAGE
+                  fi
+                '''
+              }
             }
           }
         }
         stage('Build & Push Backend') {
           steps {
             dir("${K8S_APP_DIR}/src/backend") {
-              sh '''
-                set -euo pipefail
-                export NODE_OPTIONS="--max-old-space-size=$NODE_MAX_HEAP"
-                export DOCKER_BUILDKIT=0
+              withCredentials([[
+                $class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: 'aws-creds'
+              ]]) {
+                sh '''
+                  set -euo pipefail
+                  export NODE_OPTIONS="--max-old-space-size=$NODE_MAX_HEAP"
+                  export DOCKER_BUILDKIT=0
 
-                echo "Checking if BACKEND image already exists in ECR..."
+                  echo "Checking if BACKEND image already exists in ECR..."
 
-                if aws ecr describe-images \
-                    --repository-name backend \
-                    --region $AWS_REGION \
-                    --query 'imageDetails | length(@)'
-                    --output text | grep -q '^[1-9]'; then
+                  if aws ecr describe-images \
+                      --repository-name backend \
+                      --region $AWS_REGION \
+                      --query 'imageDetails | length(@)'
+                      --output text | grep -q '^[1-9]'; then
 
-                  echo "Backend image exists => SKIP build & push"
+                    echo "Backend image exists => SKIP build & push"
 
-                else
-                  echo "No images found in backend repository => BUILD + PUSH"
+                  else
+                    echo "No images found in backend repository => BUILD + PUSH"
 
-                  echo "Cleaning old Docker images..."
-                  docker image prune -f
-                  docker images | grep "<none>" || true | awk '{print $3}' | xargs -r docker rmi -f
+                    echo "Cleaning old Docker images..."
+                    docker image prune -f
+                    docker images | grep "<none>" || true | awk '{print $3}' | xargs -r docker rmi -f
 
-                  docker build -t $BACK_IMAGE .
-                  docker push $BACK_IMAGE
-                fi
-              '''
+                    docker build -t $BACK_IMAGE .
+                    docker push $BACK_IMAGE
+                  fi
+                '''
+              }
             }
           }
         }
-       }
-    }
+    //    }
+    // }
 
     stage('Prepare K8s Manifests') {
       steps {
