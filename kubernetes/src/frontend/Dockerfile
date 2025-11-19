@@ -1,5 +1,5 @@
 # Create image based on the official Node image from dockerhub
-FROM node:22-alpine AS development
+FROM node:lts-buster AS development
 ENV DANGEROUSLY_DISABLE_HOST_CHECK=true
 # Create app directory
 WORKDIR /usr/src/app
@@ -12,7 +12,7 @@ COPY package-lock.json /usr/src/app
 #RUN npm set progress=false \
 #    && npm config set depth 0 \
 #    && npm i install
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Get all the code needed to run the app
 COPY . /usr/src/app
