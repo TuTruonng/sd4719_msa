@@ -3,12 +3,13 @@ pipeline {
 
   // static environment values (change region/cluster name as needed or pass as parameters)
   environment {
-    AWS_REGION       = 'ap-southeast-1'
-    CLUSTER_NAME     = 'sd4719-eks-cluster'    // override via Jenkins job param or pipeline var
-    K8S_MANIFEST_DIR = 'kubernetes'            // where your manifests live in the repo
-    K8S_NAMESPACE    = 'default'
-    NODE_MAX_HEAP    = 256                   // max heap for node builds
-    TEMP_MANIFEST_DIR = 'aws-manifest-files'
+    AWS_REGION        = 'ap-southeast-1'
+    CLUSTER_NAME      = 'sd4719-eks-cluster'    // override via Jenkins job param or pipeline var
+    K8S_APP_DIR       = 'kubernetes'
+    K8S_MANIFEST_DIR  = "${K8S_APP_DIR}/aws-manifest-files"           // where your manifests live in the repo
+    K8S_NAMESPACE     = 'default'
+    NODE_MAX_HEAP     = 256                   // max heap for node builds
+    TEMP_MANIFEST_DIR = "temp-aws-manifest-files"
   }
 
   options {
