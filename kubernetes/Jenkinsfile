@@ -201,28 +201,28 @@ pipeline {
           $class: 'AmazonWebServicesCredentialsBinding',
           credentialsId: 'aws-creds'
         ]]) {
-          sh """
+          sh '''
             set -euo pipefail
-            export AWS_REGION=${AWS_REGION}
-            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            export AWS_REGION=$AWS_REGION
+            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
             # update kubeconfig for CLUSTER_NAME (must exist and IAM creds must be allowed)
-            aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
+            aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 
             # Option A: use kubectl apply on manifests (works for first deploy)
-            kubectl apply --validate=false -f ${TEMP_MANIFEST_DIR}/mongodb.yaml || true
-            kubectl apply --validate=false -f ${TEMP_MANIFEST_DIR}/backend.yaml
-            kubectl apply --validate=false -f ${TEMP_MANIFEST_DIR}/frontend.yaml
+            kubectl apply --validate=false -f $TEMP_MANIFEST_DIR/mongodb.yaml || true
+            kubectl apply --validate=false -f $TEMP_MANIFEST_DIR/backend.yaml
+            kubectl apply --validate=false -f $TEMP_MANIFEST_DIR/frontend.yaml
 
             # Option B (preferred for live update): update deployments image
-            # kubectl -n default set image deployment/backend backend=${BACK_IMAGE} --record || true
-            # kubectl -n default set image deployment/frontend frontend=${FRONT_IMAGE} --record || true
+            # kubectl -n default set image deployment/backend backend=$BACK_IMAGE --record || true
+            # kubectl -n default set image deployment/frontend frontend=$FRONT_IMAGE --record || true
 
             # wait for rollout to complete
             kubectl rollout status deployment/backend --timeout=120s || true
             kubectl rollout status deployment/frontend --timeout=120s || true
-          """
+          '''
         }
       }
     }
@@ -235,7 +235,7 @@ pipeline {
         ]]) {
           sh '''
             echo "Pods (default):"
-            kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
+            kubectl get pods -n $K8S_NAMESPACE -o wide || true
             echo "Services:"
             kubectl get svc -n default || true
           '''
