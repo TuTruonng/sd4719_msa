@@ -235,7 +235,7 @@ pipeline {
         ]]) {
           sh '''
             echo "Pods (default):"
-            kubectl get pods -n $K8S_NAMESPACE -o wide || true
+            kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
             echo "Services:"
             kubectl get svc -n default || true
           '''
