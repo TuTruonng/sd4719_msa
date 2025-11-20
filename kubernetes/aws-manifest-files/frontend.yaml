@@ -32,3 +32,7 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
+          env:
+            # Critical: React dev server listens on all interfaces
+            - name: HOST
+              value: "0.0.0.0"
