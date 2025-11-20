@@ -24,10 +24,16 @@ app.use(express.static(path.join(__dirname, "public")));
 //  adding routes
 require("./routes")(app);
 
-app.on("ready", () => {
-  app.listen(3000, () => {
-    console.log("Server is up on port", 3000);
-  });
+// app.on("ready", () => {
+//   app.listen(3000, () => {
+//     console.log("Server is up on port", 3000);
+//   });
+// });
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "0.0.0.0";
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server is up on http://${HOST}:${PORT}`);
 });
 
 module.exports = app;
