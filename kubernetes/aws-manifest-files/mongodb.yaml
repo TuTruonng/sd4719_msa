@@ -48,11 +48,11 @@ spec:
           name: mongo-secrets
     resources:
       requests:
+        cpu: "50m"
         memory: "128Mi"
-        cpu: "100m"
       limits:
+        cpu: "200m"
         memory: "256Mi"
-        cpu: "250m"
     volumeMounts:
       - name: mongo-data
         mountPath: /data/db

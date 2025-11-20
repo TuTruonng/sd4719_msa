@@ -106,14 +106,14 @@ pipeline {
 
                   echo "Checking if FRONTEND image already exists in ECR..."
 
-                  if aws ecr describe-images \
-                      --repository-name frontend \
-                        --region $AWS_REGION \
-                        --query 'imageDetails | length(@)'
-                        --output text 2>/dev/null | grep -q '^[1-9]'; then
+                  IMAGE_COUNT=$(aws ecr describe-images \
+                    --repository-name frontend \
+                    --region $AWS_REGION \
+                    --query 'length(imageDetails)' \
+                    --output text 2>/dev/null)
 
+                  if [[ "$IMAGE_COUNT" -ge 1 ]]; then
                     echo "Frontend image exists => SKIP build & push"
-
                   else
                     echo "No images found in frontend repository => BUILD + PUSH"
 
@@ -143,14 +143,14 @@ pipeline {
 
                   echo "Checking if BACKEND image already exists in ECR..."
 
-                  if aws ecr describe-images \
-                      --repository-name backend \
-                      --region $AWS_REGION \
-                      --query 'imageDetails | length(@)'
-                      --output text 2>/dev/null | grep -q '^[1-9]'; then
+                  IMAGE_COUNT=$(aws ecr describe-images \
+                    --repository-name backend \
+                    --region $AWS_REGION \
+                    --query 'length(imageDetails)' \
+                    --output text 2>/dev/null)
 
+                  if [[ "$IMAGE_COUNT" -ge 1 ]]; then
                     echo "Backend image exists => SKIP build & push"
-
                   else
                     echo "No images found in backend repository => BUILD + PUSH"
 
@@ -229,12 +229,17 @@ pipeline {
 
     stage('Verify') {
       steps {
-        sh '''
-          echo "Pods (default):"
-          kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
-          echo "Services:"
-          kubectl get svc -n default || true
-        '''
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          centialsId: 'aws-creds'
+        ]]) {
+          sh '''
+            echo "Pods (default):"
+            kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
+            echo "Services:"
+            kubectl get svc -n default || true
+          '''
+        }
       }
     }
   } // stages

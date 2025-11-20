@@ -27,14 +27,14 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend:a665b65
+          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
           resources:
             requests:
+              cpu: "50m"
               memory: "128Mi"
-              cpu: "100m"
             limits:
+              cpu: "200m"
               memory: "256Mi"
-              cpu: "250m"
