@@ -112,6 +112,7 @@ pipeline {
                     --query 'length(imageDetails)' \
                     --output text 2>/dev/null)
 
+                  // It only builds and pushes if testing deployment for the first time to avoid unnessary builds. We can remove this check if we want to always build and push new images.
                   if [[ "$IMAGE_COUNT" -ge 1 ]]; then
                     echo "Frontend image exists => SKIP build & push"
                   else
@@ -149,6 +150,7 @@ pipeline {
                     --query 'length(imageDetails)' \
                     --output text 2>/dev/null)
 
+                  // It only builds and pushes if testing deployment for the first time to avoid unnessary builds. We can remove this check if we want to always build and push new images.
                   if [[ "$IMAGE_COUNT" -ge 1 ]]; then
                     echo "Backend image exists => SKIP build & push"
                   else
