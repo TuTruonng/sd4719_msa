@@ -32,8 +32,3 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
-          env:
-            - name: HOST
-              value: "0.0.0.0"
-          # Optional: If you want to explicitly pass the host in start command
-          command: ["npm", "start", "--", "--host", "0.0.0.0"]
