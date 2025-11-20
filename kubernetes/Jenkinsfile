@@ -229,17 +229,12 @@ pipeline {
 
     stage('Verify') {
       steps {
-        withCredentials([[
-          $class: 'AmazonWebServicesCredentialsBinding',
-          centialsId: 'aws-creds'
-        ]]) {
-          sh '''
-            echo "Pods (default):"
-            kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
-            echo "Services:"
-            kubectl get svc -n default || true
-          '''
-        }
+        sh '''
+          echo "Pods (default):"
+          kubectl get pods -n $K8S_NAMESPACE -o wide || true
+          echo "Services:"
+          kubectl get svc -n default || true
+        '''
       }
     }
   } // stages

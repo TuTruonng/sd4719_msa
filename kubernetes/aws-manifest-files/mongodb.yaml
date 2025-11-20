@@ -46,13 +46,6 @@ spec:
           name: mongo-config
       - secretRef:
           name: mongo-secrets
-    resources:
-      requests:
-        cpu: "50m"
-        memory: "128Mi"
-      limits:
-        cpu: "200m"
-        memory: "256Mi"
     volumeMounts:
       - name: mongo-data
         mountPath: /data/db

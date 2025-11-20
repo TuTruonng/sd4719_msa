@@ -20,7 +20,7 @@ spec:
   selector:
     matchLabels:
       app: frontend
-  replicas: 1
+  replicas: 0
   template:
     metadata:
       labels:
@@ -28,14 +28,7 @@ spec:
     spec:
       containers:
         - name: react-app
-          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:8a846ab
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "128Mi"
-            limits:
-              cpu: "200m"
-              memory: "256Mi"

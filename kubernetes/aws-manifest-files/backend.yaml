@@ -19,7 +19,7 @@ spec:
   selector:
     matchLabels:
       app: backend
-  replicas: 1
+  replicas: 0
   template:
     metadata:
       labels:
@@ -27,14 +27,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend:latest
+          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend:8a846ab
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "128Mi"
-            limits:
-              cpu: "200m"
-              memory: "256Mi"
