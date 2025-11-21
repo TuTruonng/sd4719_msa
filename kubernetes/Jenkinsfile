@@ -172,31 +172,33 @@ pipeline {
     //    }
     // }
 
-    // stage('Prepare K8s Manifests') {
-    //   steps {
-    //     // Prefer kubectl rollout or ``kubectl set image`` instead of editing files then apply
-    //     // We'll create a temporary copy of manifests and replace images there, then archive
-    //     sh """
-    //       set -euo pipefail
-    //       mkdir -p ${TEMP_MANIFEST_DIR}
+    // Note: The following stage is commented out because we are using ArgoCD to manage deployments.
+    // If you prefer to deploy directly via kubectl, uncomment and use this stage.
+    stage('Prepare K8s Manifests') {
+      steps {
+        // Prefer kubectl rollout or ``kubectl set image`` instead of editing files then apply
+        // We'll create a temporary copy of manifests and replace images there, then archive
+        sh """
+          set -euo pipefail
+          mkdir -p ${TEMP_MANIFEST_DIR}
 
-    //       echo "Copying manifests from: ${K8S_MANIFEST_DIR}"
-    //       cp ${K8S_MANIFEST_DIR}/*.yaml ${TEMP_MANIFEST_DIR}/ || true
+          echo "Copying manifests from: ${K8S_MANIFEST_DIR}"
+          cp ${K8S_MANIFEST_DIR}/*.yaml ${TEMP_MANIFEST_DIR}/ || true
 
-    //       echo "Patching manifest images…"
+          echo "Patching manifest images…"
 
-    //       # Update frontend image
-    //       sed -i "s|image:.*frontend.*|image: ${env.FRONT_IMAGE}|g" ${TEMP_MANIFEST_DIR}/frontend.yaml || true
+          # Update frontend image
+          sed -i "s|image:.*frontend.*|image: ${env.FRONT_IMAGE}|g" ${TEMP_MANIFEST_DIR}/frontend.yaml || true
 
-    //       # Update backend image
-    //       sed -i "s|image:.*backend.*|image: ${env.BACK_IMAGE}|g"  ${TEMP_MANIFEST_DIR}/backend.yaml || true
+          # Update backend image
+          sed -i "s|image:.*backend.*|image: ${env.BACK_IMAGE}|g"  ${TEMP_MANIFEST_DIR}/backend.yaml || true
 
-    //       # keep the originals for traceability and archive the updated ones
-    //       ls -la ${TEMP_MANIFEST_DIR}
-    //     """
-    //     archiveArtifacts artifacts: "${TEMP_MANIFEST_DIR}/*.yaml", fingerprint: true
-    //   }
-    // }
+          # keep the originals for traceability and archive the updated ones
+          ls -la ${TEMP_MANIFEST_DIR}
+        """
+        archiveArtifacts artifacts: "${TEMP_MANIFEST_DIR}/*.yaml", fingerprint: true
+      }
+    }
 
     // stage('Deploy to EKS') {
     //   steps {
@@ -230,6 +232,8 @@ pipeline {
     //   }
     // }
 
+    // New stage to deploy via ArgoCD
+    // Commnent out this stage if you prefer direct kubectl deployment
     stage('Deploy to EKS via ArgoCD') {
       steps {
          withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
