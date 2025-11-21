@@ -243,6 +243,8 @@ pipeline {
 
             # Sync ArgoCD Application
             argocd app sync my-app-argocd --core
+
+            argocd app get my-app-argocd --core
           '''
         }
       }
