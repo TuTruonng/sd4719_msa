@@ -1,7 +1,19 @@
 grafana:
-  enabled: true
   adminUser: admin
   adminPassword: admin123
+  service:
+    type: ClusterIP # Internal-only access
+    port: 80
+  dashboards:
+    default:
+      kubernetes-cluster:
+        gnetId: 6417
+        revision: 1
+        datasource: Prometheus
+      pods-overview:
+        gnetId: 15760
+        revision: 3
+        datasource: Prometheus
   resources:
     requests:
       cpu: 50m
@@ -9,11 +21,10 @@ grafana:
     limits:
       cpu: 200m
       memory: 200Mi
-    service:
-      type: ClusterIP
 
 prometheus:
-  enabled: true
+  service:
+    type: ClusterIP
   prometheusSpec:
     retention: 3d
     resources:
@@ -25,7 +36,7 @@ prometheus:
         memory: 600Mi
 
 alertmanager:
-enabled: false # disable Alertmanager for minimal setup
+  enabled: false # disable Alertmanager for minimal setup
 
 # Disable components not required for cluster monitoring
 nodeExporter:
@@ -37,6 +48,16 @@ kubeStateMetrics:
 # Disable extra exporters to minimize footprint
 defaultRules:
   create: true
+  rules:
+    alertmanager: false
+    etcd: false
+    general: true
+    k8s: true
+    kubeApiserver: true
+    kubePrometheusNodeAlerting: false
+    kubePrometheusNodeRecording: true
+    node: true
+    prometheus: true
 kubeProxy:
   enabled: false
 kubeEtcd:
@@ -45,6 +66,3 @@ kubeScheduler:
   enabled: false
 kubeControllerManager:
   enabled: false
-
-
----
