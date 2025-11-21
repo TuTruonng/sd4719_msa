@@ -10,6 +10,7 @@ pipeline {
     K8S_NAMESPACE     = 'default'
     NODE_MAX_HEAP     = 256                   // max heap for node builds
     TEMP_MANIFEST_DIR = "temp-aws-manifest-files"
+    ARGOCD_SERVER     = "localhost:8080"          // ArgoCD server address
   }
 
   options {
