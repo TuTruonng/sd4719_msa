@@ -16,6 +16,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: backend=341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/frontend
 spec:
   selector:
     matchLabels:

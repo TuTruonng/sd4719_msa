@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app-argocd
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/TuTruonng/sd4719_msa
+    targetRevision: master    # or HEAD if you prefer
+    path: kubernetes/aws-manifest-files   # folder with your manifests
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default   # target namespace in EKS
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      selfHeal: true
+      prune: true
