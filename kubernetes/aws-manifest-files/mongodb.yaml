@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: mongo
   labels:
-    name: mongo
+    app: mongo
 spec:
   selector:
-    name: mongo
+    app: mongo
   ports:
     - port: 27017
       protocol: TCP
@@ -26,29 +26,42 @@ metadata:
   name: mongo-secrets
 type: Opaque
 data:
-  MONGODB_INITDB_ROOT_PASSWORD: cGFzc3dvcmQK
+  MONGODB_INITDB_ROOT_PASSWORD: cGFzc3dvcmQ=   # base64 of "password"
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: mongo-lite
-  labels:
-    app: mongo-lite
+  name: mongo
 spec:
-  terminationGracePeriodSeconds: 10
-  containers:
-  - name: mongo
-    image: mongo:6.0
-    ports:
-      - containerPort: 27017
-    envFrom:
-      - configMapRef:
-          name: mongo-config
-      - secretRef:
-          name: mongo-secrets
-    volumeMounts:
-      - name: mongo-data
-        mountPath: /data/db
-  volumes:
-    - name: mongo-data
-      emptyDir: {}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: mongo
+        image: mongo:6.0
+        ports:
+          - containerPort: 27017
+        env:
+          - name: MONGO_INITDB_ROOT_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: mongo-config
+                key: MONGODB_INITDB_ROOT_USERNAME
+          - name: MONGO_INITDB_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secrets
+                key: MONGODB_INITDB_ROOT_PASSWORD
+        volumeMounts:
+          - name: mongo-data
+            mountPath: /data/db
+      volumes:
+        - name: mongo-data
+          emptyDir: {}
