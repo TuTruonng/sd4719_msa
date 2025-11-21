@@ -36,5 +36,5 @@ spec:
             # Critical: React dev server listens on all interfaces
             - name: HOST
               value: "0.0.0.0"
-            - name: REACT_APP_API_URL
-              value: "http://backend:3000"
+            # - name: REACT_APP_API_URL
+            #   value: "http://backend:3000"
