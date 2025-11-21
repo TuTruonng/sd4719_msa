@@ -1,0 +1,50 @@
+grafana:
+  enabled: true
+  adminUser: admin
+  adminPassword: admin123
+  resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+    service:
+      type: ClusterIP
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 3d
+    resources:
+      requests:
+        cpu: 150m
+        memory: 300Mi
+      limits:
+        cpu: 300m
+        memory: 600Mi
+
+alertmanager:
+enabled: false # disable Alertmanager for minimal setup
+
+# Disable components not required for cluster monitoring
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+# Disable extra exporters to minimize footprint
+defaultRules:
+  create: true
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+
+
+---
