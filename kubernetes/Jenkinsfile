@@ -242,9 +242,9 @@ pipeline {
             argocd login $ARGOCD_SERVER --username admin --password $ARGOCD_TOKEN --core
 
             # Sync ArgoCD Application
-            argocd app sync my-app-argocd --core --wait --timeout 300
+            argocd app sync my-app-argocd --wait --timeout 300
 
-            argocd app get my-app-argocd --core
+            argocd app get my-app-argocd
           '''
         }
       }
