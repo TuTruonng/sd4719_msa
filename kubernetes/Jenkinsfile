@@ -108,21 +108,21 @@ pipeline {
                   echo "Checking if FRONTEND image already exists in ECR..."
 
                   # Check number of images in repo
-                  IMAGE_COUNT=$(aws ecr describe-images \
-                    --repository-name frontend \
-                    --region $AWS_REGION \
-                    --query 'length(imageDetails)' \
-                    --output text 2>/dev/null)
+                  // IMAGE_COUNT=$(aws ecr describe-images \
+                  //   --repository-name frontend \
+                  //   --region $AWS_REGION \
+                  //   --query 'length(imageDetails)' \
+                  //   --output text 2>/dev/null)
 
                   # Check for specific tag 
                   IMAGE_EXISTS=$(aws ecr describe-images \
-                    --repository-name backend \
+                    --repository-name frontend \
                     --region "$AWS_REGION" \
-                    --query "imageDetails[?contains(imageTags, \`${NEW_TAG}\`)] | length(@)" \
+                    --query 'length(imageDetails?contains(imageTags, `'"${IMAGE_TAG}"'`))' \
                     --output text 2>/dev/null)
                     
-                  # It only builds and pushes if testing deployment for the first time to avoid unnessary builds. We can remove this check if we want to always build and push new images.
-                  # if [[ "$IMAGE_COUNT" -ge 1 ]]; then
+                  # Checking image count is skipped to always build and push new images
+                  // if [[ "$IMAGE_COUNT" -ge 1 ]]; then
 
                   # Check if image with the same tag exists
                   if [[ "$IMAGE_EXISTS" -ge 1 ]]; then
@@ -157,21 +157,21 @@ pipeline {
                   echo "Checking if BACKEND image already exists in ECR..."
 
                   # Check number of images in repo
-                  IMAGE_COUNT=$(aws ecr describe-images \
-                    --repository-name backend \
-                    --region $AWS_REGION \
-                    --query 'length(imageDetails)' \
-                    --output text 2>/dev/null)
+                  // IMAGE_COUNT=$(aws ecr describe-images \
+                  //   --repository-name backend \
+                  //   --region $AWS_REGION \
+                  //   --query 'length(imageDetails)' \
+                  //   --output text 2>/dev/null)
                   
                   # Check for specific tag 
                   IMAGE_EXISTS=$(aws ecr describe-images \
-                  --repository-name backend \
-                  --region "$AWS_REGION" \
-                  --query "imageDetails[?contains(imageTags, \`${NEW_TAG}\`)] | length(@)" \
-                  --output text 2>/dev/null)
+                    --repository-name backend \
+                    --region "$AWS_REGION" \
+                    --query 'length(imageDetails?contains(imageTags, `'"${IMAGE_TAG}"'`))' \
+                    --output text 2>/dev/null)
                     
-                  # It only builds and pushes if testing deployment for the first time to avoid unnessary builds. We can remove this check if we want to always build and push new images.
-                  # if [[ "$IMAGE_COUNT" -ge 1 ]]; then
+                  # Checking image count is skipped to always build and push new images
+                  // if [[ "$IMAGE_COUNT" -ge 1 ]]; then
 
                   # Check if image with the same tag exists
                   if [[ "$IMAGE_EXISTS" -ge 1 ]]; then
