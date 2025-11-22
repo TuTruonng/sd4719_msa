@@ -108,11 +108,11 @@ pipeline {
                   echo "Checking if FRONTEND image already exists in ECR..."
 
                   # Check number of images in repo
-                  // IMAGE_COUNT=$(aws ecr describe-images \
-                  //   --repository-name frontend \
-                  //   --region $AWS_REGION \
-                  //   --query 'length(imageDetails)' \
-                  //   --output text 2>/dev/null)
+                  # IMAGE_COUNT=$(aws ecr describe-images \
+                  #   --repository-name frontend \
+                  #   --region $AWS_REGION \
+                  #   --query 'length(imageDetails)' \
+                  #   --output text 2>/dev/null)
 
                   # Check for specific tag 
                   IMAGE_EXISTS=$(aws ecr describe-images \
@@ -157,11 +157,11 @@ pipeline {
                   echo "Checking if BACKEND image already exists in ECR..."
 
                   # Check number of images in repo
-                  // IMAGE_COUNT=$(aws ecr describe-images \
-                  //   --repository-name backend \
-                  //   --region $AWS_REGION \
-                  //   --query 'length(imageDetails)' \
-                  //   --output text 2>/dev/null)
+                  # IMAGE_COUNT=$(aws ecr describe-images \
+                  #   --repository-name backend \
+                  #   --region $AWS_REGION \
+                  #   --query 'length(imageDetails)' \
+                  #   --output text 2>/dev/null)
                   
                   # Check for specific tag 
                   IMAGE_EXISTS=$(aws ecr describe-images \
