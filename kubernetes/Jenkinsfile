@@ -118,7 +118,7 @@ pipeline {
                   IMAGE_EXISTS=$(aws ecr describe-images \
                     --repository-name frontend \
                     --region "$AWS_REGION" \
-                    --query "length(imageDetails[?contains(imageTags, '$IMAGE_TAG')])" \
+                    --query "imageDetails[?contains(imageTags, '$IMAGE_TAG')] | length(@)" \
                     --output text 2>/dev/null)
                     
                   # Checking image count is skipped to always build and push new images
@@ -167,7 +167,7 @@ pipeline {
                   IMAGE_EXISTS=$(aws ecr describe-images \
                     --repository-name backend \
                     --region "$AWS_REGION" \
-                    --query "length(imageDetails[?contains(imageTags, '$IMAGE_TAG')])" \
+                    --query "imageDetails[?contains(imageTags, '$IMAGE_TAG')] | length(@)" \
                     --output text 2>/dev/null)
                     
                   # Checking image count is skipped to always build and push new images
