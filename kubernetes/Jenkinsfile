@@ -255,19 +255,7 @@ pipeline {
     //   }
     // }
 
-    stage('Verify') {
-      steps {
-        sh '''
-          echo "Pods (default):"
-          kubectl get pods -n $K8S_NAMESPACE -o wide || true
-          echo "Services:"
-          kubectl get svc -n default || true
-        '''
-      }
-    }
-  } // stages
-
-  stage('Post-Build Summary') {
+    stage('Post-Build Summary') {
       steps {
         echo """
           GitOps Build Complete
@@ -281,7 +269,18 @@ pipeline {
           """
       }
     }
-  }
+    
+    stage('Verify') {
+      steps {
+        sh '''
+          echo "Pods (default):"
+          kubectl get pods -n $K8S_NAMESPACE -o wide || true
+          echo "Services:"
+          kubectl get svc -n default || true
+        '''
+      }
+    }
+  } // stages
 
   post {
     success {
