@@ -122,7 +122,7 @@ pipeline {
                     --output text 2>/dev/null)
                     
                   # Checking image count is skipped to always build and push new images
-                  // if [[ "$IMAGE_COUNT" -ge 1 ]]; then
+                  # if [[ "$IMAGE_COUNT" -ge 1 ]]; then
 
                   # Check if image with the same tag exists
                   if [[ "$IMAGE_EXISTS" -ge 1 ]]; then
@@ -171,7 +171,7 @@ pipeline {
                     --output text 2>/dev/null)
                     
                   # Checking image count is skipped to always build and push new images
-                  // if [[ "$IMAGE_COUNT" -ge 1 ]]; then
+                  # if [[ "$IMAGE_COUNT" -ge 1 ]]; then
 
                   # Check if image with the same tag exists
                   if [[ "$IMAGE_EXISTS" -ge 1 ]]; then
