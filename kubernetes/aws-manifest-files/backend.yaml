@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend:1
+          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend:2
           imagePullPolicy: Always
           ports:
             - containerPort: 3000

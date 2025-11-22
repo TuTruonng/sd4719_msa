@@ -173,7 +173,7 @@ pipeline {
     // }
 
     // Note: The following stage is commented out because we are using ArgoCD to manage deployments.
-    // If you prefer to deploy directly via kubectl, uncomment and use this stage.
+    // If you prefer GitOps with ArgoCD, you can skip this stage.
     // stage('Prepare K8s Manifests') {
     //   steps {
     //     // Prefer kubectl rollout or ``kubectl set image`` instead of editing files then apply
@@ -200,6 +200,8 @@ pipeline {
     //   }
     // }
 
+    // Note: The following stage is commented out because we are using ArgoCD to manage deployments.
+    // If you prefer GitOps with ArgoCD, you can skip this stage.
     // stage('Deploy to EKS') {
     //   steps {
     //     withCredentials([[
@@ -255,6 +257,7 @@ pipeline {
     //   }
     // }
 
+    // If using ArgoCD to manage deployments, this stage provides a summary
     stage('Post-Build Summary') {
       steps {
         echo """
