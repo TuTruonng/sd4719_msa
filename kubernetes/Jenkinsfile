@@ -28,7 +28,7 @@ pipeline {
       steps {
         checkout scm
         script {
-          // resolve a stable image tag: prefer param -> git short SHA -> build number
+          // resolve a stable image tag: prefer param => git short SHA => build number
           env.GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
           if (params.IMAGE_TAG?.trim()) {
             env.IMAGE_TAG = params.IMAGE_TAG
@@ -174,31 +174,31 @@ pipeline {
 
     // Note: The following stage is commented out because we are using ArgoCD to manage deployments.
     // If you prefer to deploy directly via kubectl, uncomment and use this stage.
-    stage('Prepare K8s Manifests') {
-      steps {
-        // Prefer kubectl rollout or ``kubectl set image`` instead of editing files then apply
-        // We'll create a temporary copy of manifests and replace images there, then archive
-        sh """
-          set -euo pipefail
-          mkdir -p ${TEMP_MANIFEST_DIR}
+    // stage('Prepare K8s Manifests') {
+    //   steps {
+    //     // Prefer kubectl rollout or ``kubectl set image`` instead of editing files then apply
+    //     // We'll create a temporary copy of manifests and replace images there, then archive
+    //     sh """
+    //       set -euo pipefail
+    //       mkdir -p ${TEMP_MANIFEST_DIR}
 
-          echo "Copying manifests from: ${K8S_MANIFEST_DIR}"
-          cp ${K8S_MANIFEST_DIR}/*.yaml ${TEMP_MANIFEST_DIR}/ || true
+    //       echo "Copying manifests from: ${K8S_MANIFEST_DIR}"
+    //       cp ${K8S_MANIFEST_DIR}/*.yaml ${TEMP_MANIFEST_DIR}/ || true
 
-          echo "Patching manifest images…"
+    //       echo "Patching manifest images…"
 
-          # Update frontend image
-          sed -i "s|image:.*frontend.*|image: ${env.FRONT_IMAGE}|g" ${TEMP_MANIFEST_DIR}/frontend.yaml || true
+    //       # Update frontend image
+    //       sed -i "s|image:.*frontend.*|image: ${env.FRONT_IMAGE}|g" ${TEMP_MANIFEST_DIR}/frontend.yaml || true
 
-          # Update backend image
-          sed -i "s|image:.*backend.*|image: ${env.BACK_IMAGE}|g"  ${TEMP_MANIFEST_DIR}/backend.yaml || true
+    //       # Update backend image
+    //       sed -i "s|image:.*backend.*|image: ${env.BACK_IMAGE}|g"  ${TEMP_MANIFEST_DIR}/backend.yaml || true
 
-          # keep the originals for traceability and archive the updated ones
-          ls -la ${TEMP_MANIFEST_DIR}
-        """
-        archiveArtifacts artifacts: "${TEMP_MANIFEST_DIR}/*.yaml", fingerprint: true
-      }
-    }
+    //       # keep the originals for traceability and archive the updated ones
+    //       ls -la ${TEMP_MANIFEST_DIR}
+    //     """
+    //     archiveArtifacts artifacts: "${TEMP_MANIFEST_DIR}/*.yaml", fingerprint: true
+    //   }
+    // }
 
     // stage('Deploy to EKS') {
     //   steps {
@@ -234,21 +234,26 @@ pipeline {
 
     // New stage to deploy via ArgoCD
     // Commnent out this stage if you prefer direct kubectl deployment
-    stage('Deploy to EKS via ArgoCD') {
-      steps {
-         withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
-          sh '''
-            # Login to Argo CD
-            argocd login $ARGOCD_SERVER --username admin --password $ARGOCD_TOKEN --core
+    // stage('Deploy to EKS via ArgoCD') {
+    //   steps {
+    //      withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
+    //       sh '''
+    //         # Login to Argo CD
+    //         # argocd login $ARGOCD_SERVER --username admin --password $ARGOCD_TOKEN --core
+    //         argocd login $ARGOCD_SERVER \
+    //         --username admin \
+    //         --password $ARGOCD_TOKEN \
+    //         --insecure \
+    //         --grpc-web
 
-            # Sync ArgoCD Application
-            argocd app sync my-app-argocd --wait --timeout 300
+    //         # Sync ArgoCD Application
+    //         argocd app sync my-app-argocd --grpc-web --timeout 300 --wait
 
-            argocd app get my-app-argocd
-          '''
-        }
-      }
-    }
+    //         argocd app get my-app-argocd --core
+    //       '''
+    //     }
+    //   }
+    // }
 
     stage('Verify') {
       steps {
@@ -262,9 +267,25 @@ pipeline {
     }
   } // stages
 
+  stage('Post-Build Summary') {
+      steps {
+        echo """
+          GitOps Build Complete
+
+          Frontend Image: ${env.FRONT_IMAGE}
+          Backend Image : ${env.BACK_IMAGE}
+
+          ArgoCD Image Updater will detect this new
+          image tag in ECR and update the GitOps repo.
+          ArgoCD Auto-Sync will deploy the change.
+          """
+      }
+    }
+  }
+
   post {
     success {
-      echo "Deployment succeeded: frontend -> ${env.FRONT_IMAGE}, backend -> ${env.BACK_IMAGE}"
+      echo "Deployment succeeded: frontend => ${env.FRONT_IMAGE}, backend => ${env.BACK_IMAGE}"
     }
     failure {
       sh 'kubectl get pods --all-namespaces || true'

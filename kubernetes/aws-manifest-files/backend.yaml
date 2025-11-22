@@ -16,8 +16,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: backend=341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend
 spec:
   selector:
     matchLabels:
@@ -27,10 +25,15 @@ spec:
     metadata:
       labels:
         app: backend
+      annotations:
+        # image-list tells image-updater which registry/repo to watch
+        argocd-image-updater.argoproj.io/image-list: backend=341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend
+        # update strategy (latest / semver / digest)
+        argocd-image-updater.argoproj.io/backend.update-strategy: latest
     spec:
       containers:
         - name: backend
-          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend:${IMAGE_TAG}
+          image: 341641263178.dkr.ecr.ap-southeast-1.amazonaws.com/backend:1
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
